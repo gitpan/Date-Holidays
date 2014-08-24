@@ -1,9 +1,8 @@
-package Date::Holidays::Adapter::NO;
-
-# $Id: NO.pm 1742 2007-02-22 19:47:55Z jonasbn $
+package Date::Holidays::Adapter::BR;
 
 use strict;
 use warnings;
+
 use base 'Date::Holidays::Adapter';
 
 use vars qw($VERSION);
@@ -11,27 +10,28 @@ use vars qw($VERSION);
 $VERSION = '0.18';
 
 sub holidays {
-    my ($self, %params) = @_;
+    my ( $self, %params ) = @_;
 
-    my $sub = $self->{_adaptee}->can('holidays');    
+    my $dh = $self->{_adaptee}->new();
 
-    if ($sub) {
-        return &{$sub}($params{'year'});
+    if ($dh) {
+        return $dh->holidays( $params{'year'} );
     } else {
-        return;    
+        return;
     }
 }
 
 sub is_holiday {
-    my ($self, %params) = @_;
-    
-    my $sub = $self->{_adaptee}->can('is_holiday');
+    my ( $self, %params ) = @_;
 
-    if ($sub) {
-        return &{$sub}($params{'year'}, $params{'month'}, $params{'day'});
+    my $dh = $self->{_adaptee}->new();
+
+    if ($dh) {
+        return $dh->is_holiday( $params{'year'}, $params{'month'},
+            $params{'day'} );
     } else {
-        return;    
-    } 
+        return;
+    }
 }
 
 1;
@@ -40,11 +40,15 @@ __END__
 
 =head1 NAME
 
-Date::Holidays::Adapter::NO - an adapter class for Date::Holidays::NO
+Date::Holidays::Adapter::BR - an adapter class for Date::Holidays::BR
 
 =head1 VERSION
 
-This POD describes version 0.01 of Date::Holidays::Adapter::NO
+This POD describes version 0.01 of Date::Holidays::Adapter::BR
+
+=head1 DESCRIPTION
+
+The is the adapter class for L<Date::Holidays::BR>.
 
 =head1 SUBROUTINES/METHODS
 
@@ -106,7 +110,7 @@ support the called method. (SEE: METHODS/SUBROUTINES).
 
 =over
 
-=item * L<Date::Holidays::NO>
+=item * L<Date::Holidays::PT>
 
 =item * L<Date::Holidays::Adapter>
 
@@ -130,7 +134,9 @@ Please refer to INCOMPATIBILITIES in L<Date::Holidays>
 
 =head1 BUGS AND LIMITATIONS
 
-Please refer to BUGS AND LIMITATIONS in L<Date::Holidays>
+The adapter does not implement the B<is_pt_holiday> method. The pattern used is
+an object adapter pattern and inheritance is therefor not used, it is my hope
+that I can make this work with some Perl magic.
 
 =head1 BUG REPORTING
 
@@ -149,7 +155,7 @@ Jonas B. Nielsen, (jonasbn) - C<< <jonasbn@cpan.org> >>
 =head1 LICENSE AND COPYRIGHT
 
 L<Date::Holidays> and related modules are (C) by Jonas B. Nielsen, (jonasbn)
-2004-2007
+2004-2014
 
 L<Date::Holidays> and related modules are released under the artistic license
 

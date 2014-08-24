@@ -28,4 +28,4 @@ requires:
 resources:
   homepage: http://search.cpan.org/dist/Date-Holidays/
   repository: git://github.com/gitpan/Date-Holidays.git
-version: 0.17
+version: 0.18

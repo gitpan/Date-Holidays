@@ -4,7 +4,7 @@ use warnings;
 
 # this test was generated with Dist::Zilla::Plugin::Test::Compile 2.045
 
-use Test::More  tests => 17;
+use Test::More  tests => 18;
 
 
 
@@ -12,6 +12,7 @@ my @module_files = (
     'Date/Holidays.pm',
     'Date/Holidays/Adapter.pm',
     'Date/Holidays/Adapter/AU.pm',
+    'Date/Holidays/Adapter/BR.pm',
     'Date/Holidays/Adapter/DE.pm',
     'Date/Holidays/Adapter/DK.pm',
     'Date/Holidays/Adapter/ES.pm',

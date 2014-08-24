@@ -13,6 +13,7 @@ dist.ini
 lib/Date/Holidays.pm
 lib/Date/Holidays/Adapter.pm
 lib/Date/Holidays/Adapter/AU.pm
+lib/Date/Holidays/Adapter/BR.pm
 lib/Date/Holidays/Adapter/DE.pm
 lib/Date/Holidays/Adapter/DK.pm
 lib/Date/Holidays/Adapter/ES.pm
