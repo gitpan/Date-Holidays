@@ -1,20 +1,17 @@
 package Date::Holidays::Adapter::JP;
 
-# $Id: JP.pm 1742 2007-02-22 19:47:55Z jonasbn $
-
 use strict;
 use warnings;
 use vars qw($VERSION);
 use Locale::Country;
 use Error qw(:try);
-use UNIVERSAL qw(can);
 
 use base 'Date::Holidays::Adapter';
 use Date::Holidays::Exception::UnsupportedMethod;
 use Date::Holidays::Exception::InvalidCountryCode;
 use Date::Holidays::Exception::NoCountrySpecified;
 
-$VERSION = '0.18';
+$VERSION = '0.19';
 
 sub holidays {
     throw Date::Holidays::Exception::UnsupportedMethod('is_holiday');
@@ -23,7 +20,7 @@ sub holidays {
 
 sub is_holiday {
     my ($self, %params) = @_;
-    
+
     my $sub = $self->{_adaptee}->can('is_japanese_holiday');
 
     return &{$sub}($params{'year'}, $params{'month'}, $params{'day'});
@@ -40,7 +37,7 @@ sub _fetch {
 
     if ( !$params->{nocheck} ) {
         if ( !code2country($self->{_countrycode}) ) { #from Locale::Country
-            throw Date::Holidays::Exception::InvalidCountryCode("$self->{_countrycode} is not a valid country code"); 
+            throw Date::Holidays::Exception::InvalidCountryCode("$self->{_countrycode} is not a valid country code");
         }
     }
 
@@ -49,7 +46,7 @@ sub _fetch {
     }
     catch Date::Holidays::Exception::AdapterLoad with {
         my $E = shift;
-        $E->throw;    
+        $E->throw;
     };
 
     return $module;
@@ -65,7 +62,7 @@ Date::Holidays::Adapter::JP - an adapter class for Date::Japanese::Holiday
 
 =head1 VERSION
 
-This POD describes version 0.01 of Date::Holidays::Adapter::JP
+This POD describes version 0.19 of Date::Holidays::Adapter::JP
 
 =head1 DESCRIPTION
 
@@ -142,8 +139,6 @@ support the called method. (SEE: METHODS/SUBROUTINES).
 
 =item * L<Error>
 
-=item * L<UNIVERSAL>
-
 =back
 
 =head1 INCOMPATIBILITIES
@@ -189,7 +184,7 @@ Jonas B. Nielsen, (jonasbn) - C<< <jonasbn@cpan.org> >>
 =head1 LICENSE AND COPYRIGHT
 
 L<Date::Holidays> and related modules are (C) by Jonas B. Nielsen, (jonasbn)
-2004-2007
+2004-2014
 
 L<Date::Holidays> and related modules are released under the artistic license
 

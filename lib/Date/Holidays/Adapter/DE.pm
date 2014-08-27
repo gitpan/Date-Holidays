@@ -1,7 +1,5 @@
 package Date::Holidays::Adapter::DE;
 
-# $Id: DE.pm 1742 2007-02-22 19:47:55Z jonasbn $
-
 use strict;
 use warnings;
 use Error qw(:try);
@@ -9,7 +7,7 @@ use base 'Date::Holidays::Adapter';
 
 use vars qw($VERSION);
 
-$VERSION = '0.18';
+$VERSION = '0.19';
 
 sub holidays {
     my ($self, %params) = @_;
@@ -37,7 +35,7 @@ Date::Holidays::Adapter::DE - an adapter class for Date::Holidays::DE
 
 =head1 VERSION
 
-This POD describes version 0.01 of Date::Holidays::Adapter::DE
+This POD describes version 0.19 of Date::Holidays::Adapter::DE
 
 =head1 DESCRIPTION
 
@@ -117,8 +115,6 @@ support the called method. (SEE: METHODS/SUBROUTINES).
 
 =item * L<Error>
 
-=item * L<UNIVERSAL>
-
 =back
 
 =head1 INCOMPATIBILITIES
@@ -152,7 +148,7 @@ Jonas B. Nielsen, (jonasbn) - C<< <jonasbn@cpan.org> >>
 =head1 LICENSE AND COPYRIGHT
 
 L<Date::Holidays> and related modules are (C) by Jonas B. Nielsen, (jonasbn)
-2004-2007
+2004-2014
 
 L<Date::Holidays> and related modules are released under the artistic license
 

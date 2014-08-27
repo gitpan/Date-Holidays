@@ -1,40 +1,38 @@
 package Date::Holidays::Adapter::AU;
 
-# $Id: AU.pm 1779 2007-03-05 19:56:05Z jonasbn $
-
 use strict;
 use warnings;
 use vars qw($VERSION);
 
 use base 'Date::Holidays::Adapter';
 
-$VERSION = '0.18';
+$VERSION = '0.19';
 
 use constant DEFAULT_STATE => 'VIC';
 
 sub holidays {
     my ($self, %params) = @_;
 
-    my $sub = $self->{_adaptee}->can('holidays');    
+    my $sub = $self->{_adaptee}->can('holidays');
     my $state = $params{'state'} ? $params{'state'} : DEFAULT_STATE;
 
     if ($sub) {
         return &{$sub}(year => $params{'year'}, state => $state, %params);
     } else {
-        return;    
+        return;
     }
 }
 
 sub is_holiday {
     my ($self, %params) = @_;
-    
+
     my $sub = $self->{_adaptee}->can('is_holiday');
     my $state = $params{'state'} ? $params{'state'} : DEFAULT_STATE;
 
     if ($sub) {
         return &{$sub}($params{'year'}, $params{'month'}, $params{'day'},  $state, \%params);
     } else {
-        return;    
+        return;
     }
 }
 
@@ -48,7 +46,7 @@ Date::Holidays::Adapter::AU - an adapter class for Date::Holidays::AU
 
 =head1 VERSION
 
-This POD describes version 0.01 of Date::Holidays::Adapter::AU
+This POD describes version 0.19 of Date::Holidays::Adapter::AU
 
 =head1 DESCRIPTION
 
@@ -129,8 +127,6 @@ support the called method. (SEE: METHODS/SUBROUTINES).
 
 =item * L<Error>
 
-=item * L<UNIVERSAL>
-
 =back
 
 =head1 INCOMPATIBILITIES
@@ -139,7 +135,7 @@ Please refer to INCOMPATIBILITIES in L<Date::Holidays>
 
 =head1 BUGS AND LIMITATIONS
 
-Currently we have an exception for the L<Date::Holidays::AU> module, so the 
+Currently we have an exception for the L<Date::Holidays::AU> module, so the
 additional parameter of state is defaulting to 'VIC', please refer to the POD
 for L<Date::Holidays::AU> for documentation on this.
 
@@ -160,7 +156,7 @@ Jonas B. Nielsen, (jonasbn) - C<< <jonasbn@cpan.org> >>
 =head1 LICENSE AND COPYRIGHT
 
 L<Date::Holidays> and related modules are (C) by Jonas B. Nielsen, (jonasbn)
-2004-2007
+2004-2014
 
 L<Date::Holidays> and related modules are released under the artistic license
 

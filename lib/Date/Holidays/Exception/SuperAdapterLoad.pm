@@ -1,7 +1,5 @@
 package Date::Holidays::Exception::SuperAdapterLoad;
 
-# $Id: SuperAdapterLoad.pm 1742 2007-02-22 19:47:55Z jonasbn $
-
 use strict;
 use warnings;
 use vars qw($VERSION);
@@ -9,7 +7,7 @@ use vars qw($VERSION);
 use base 'Date::Holidays::Exception::AdapterLoad';
 use overload ('""' => 'stringify');
 
-$VERSION = '0.18';
+$VERSION = '0.19';
 
 1;
 
@@ -21,27 +19,27 @@ Date::Holidays::Exception::SuperAdapterLoad - an adapter exception class
 
 =head1 VERSION
 
-This POD describes version 0.01 of Date::Holidays::Exception::SuperAdapterLoad
+This POD describes version 0.19 of Date::Holidays::Exception::SuperAdapterLoad
 
 =head1 SYNOPSIS
 
     use Date::Holidays::Exception::SuperAdapterLoad;
-    
+
     try {
         #Load adapter
-        
+
         throw Date::Holidays::Exception::SuperAdapterLoad('Unable to load adapter');
     } ...
-    
-    
+
+
     ...
-    
+
     catch Date::Holidays::Exception::SuperAdapterLoad with {
         my $E = shift;
-        
+
         print STDERR $E->{-text}; #Unable to load adapter
     } ...
-    
+
 
 =head1 DESCRIPTION
 
@@ -94,7 +92,7 @@ Jonas B. Nielsen, (jonasbn) - C<< <jonasbn@cpan.org> >>
 =head1 LICENSE AND COPYRIGHT
 
 L<Date::Holidays> and related modules are (C) by Jonas B. Nielsen, (jonasbn)
-2004-2007
+2004-2014
 
 L<Date::Holidays> and related modules are released under the artistic license
 
