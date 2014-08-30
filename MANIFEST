@@ -14,13 +14,15 @@ lib/Date/Holidays.pm
 lib/Date/Holidays/Adapter.pm
 lib/Date/Holidays/Adapter/AU.pm
 lib/Date/Holidays/Adapter/BR.pm
+lib/Date/Holidays/Adapter/CN.pm
 lib/Date/Holidays/Adapter/DE.pm
 lib/Date/Holidays/Adapter/DK.pm
 lib/Date/Holidays/Adapter/ES.pm
 lib/Date/Holidays/Adapter/FR.pm
-lib/Date/Holidays/Adapter/GB.pm
 lib/Date/Holidays/Adapter/JP.pm
+lib/Date/Holidays/Adapter/KR.pm
 lib/Date/Holidays/Adapter/NO.pm
+lib/Date/Holidays/Adapter/PL.pm
 lib/Date/Holidays/Adapter/PT.pm
 lib/Date/Holidays/Exception/AdapterInitialization.pm
 lib/Date/Holidays/Exception/AdapterLoad.pm

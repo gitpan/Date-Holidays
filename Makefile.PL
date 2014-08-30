@@ -25,6 +25,7 @@ my %WriteMakefileArgs = (
     "Error" => 0,
     "Locale::Country" => 0,
     "Module::Load" => 0,
+    "Scalar::Util" => 0,
     "Test::More" => 0
   },
   "TEST_REQUIRES" => {
@@ -33,7 +34,7 @@ my %WriteMakefileArgs = (
     "IPC::Open3" => 0,
     "Test::More" => 0
   },
-  "VERSION" => "0.19",
+  "VERSION" => "0.20",
   "test" => {
     "TESTS" => "t/*.t t/Adapter/*.t"
   }
@@ -49,6 +50,7 @@ my %FallbackPrereqs = (
   "IPC::Open3" => 0,
   "Locale::Country" => 0,
   "Module::Load" => 0,
+  "Scalar::Util" => 0,
   "Test::More" => 0
 );
 

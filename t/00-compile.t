@@ -2,9 +2,9 @@ use 5.006;
 use strict;
 use warnings;
 
-# this test was generated with Dist::Zilla::Plugin::Test::Compile 2.046
+# this test was generated with Dist::Zilla::Plugin::Test::Compile 2.045
 
-use Test::More  tests => 18;
+use Test::More  tests => 20;
 
 
 
@@ -13,13 +13,15 @@ my @module_files = (
     'Date/Holidays/Adapter.pm',
     'Date/Holidays/Adapter/AU.pm',
     'Date/Holidays/Adapter/BR.pm',
+    'Date/Holidays/Adapter/CN.pm',
     'Date/Holidays/Adapter/DE.pm',
     'Date/Holidays/Adapter/DK.pm',
     'Date/Holidays/Adapter/ES.pm',
     'Date/Holidays/Adapter/FR.pm',
-    'Date/Holidays/Adapter/GB.pm',
     'Date/Holidays/Adapter/JP.pm',
+    'Date/Holidays/Adapter/KR.pm',
     'Date/Holidays/Adapter/NO.pm',
+    'Date/Holidays/Adapter/PL.pm',
     'Date/Holidays/Adapter/PT.pm',
     'Date/Holidays/Exception/AdapterInitialization.pm',
     'Date/Holidays/Exception/AdapterLoad.pm',

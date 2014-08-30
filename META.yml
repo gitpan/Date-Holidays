@@ -3,28 +3,29 @@ abstract: 'a Date::Holidays::* OOP Adapter aggregator'
 author:
   - 'Jonas B. Nielsen <jonasbn@cpan.org>'
 build_requires:
-  File::Spec: '0'
-  IO::Handle: '0'
-  IPC::Open3: '0'
-  Test::More: '0'
+  File::Spec: 0
+  IO::Handle: 0
+  IPC::Open3: 0
+  Test::More: 0
 configure_requires:
-  ExtUtils::MakeMaker: '0'
+  ExtUtils::MakeMaker: 0
 dynamic_config: 0
 generated_by: 'Dist::Zilla version 5.020, CPAN::Meta::Converter version 2.142060'
 license: artistic_2
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
-  version: '1.4'
+  version: 1.4
 name: Date-Holidays
 requires:
-  Carp: '0'
-  DateTime: '0'
-  Error: '0'
-  Locale::Country: '0'
-  Module::Load: '0'
-  Test::More: '0'
-  perl: '5.006'
+  Carp: 0
+  DateTime: 0
+  Error: 0
+  Locale::Country: 0
+  Module::Load: 0
+  Scalar::Util: 0
+  Test::More: 0
+  perl: 5.006
 resources:
   homepage: http://search.cpan.org/dist/Date-Holidays/
   repository: https://github.com/jonasbn/Date-Holidays.git
-version: '0.19'
+version: 0.20
