@@ -19,6 +19,7 @@ lib/Date/Holidays/Adapter/DE.pm
 lib/Date/Holidays/Adapter/DK.pm
 lib/Date/Holidays/Adapter/ES.pm
 lib/Date/Holidays/Adapter/FR.pm
+lib/Date/Holidays/Adapter/GB.pm
 lib/Date/Holidays/Adapter/JP.pm
 lib/Date/Holidays/Adapter/KR.pm
 lib/Date/Holidays/Adapter/NO.pm

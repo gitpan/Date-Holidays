@@ -2,7 +2,6 @@
 use strict;
 use warnings;
 use Test::More;
-use Data::Dumper;
 use Env qw($TEST_VERBOSE);
 
 my $dh;
@@ -65,6 +64,20 @@ SKIP: {
 
     ok( $dh->holidays( year => 2006 ),
         'Testing holidays with argument for Date::Holidays::DE' );
+}
+
+SKIP: {
+    eval { require Date::Holidays::GB };
+    skip "Date::Holidays::GB not installed", 3 if $@;
+
+    ok( $dh = Date::Holidays->new( countrycode => 'gb' ),
+        'Testing Date::Holidays::GB' );
+
+    ok( $dh->holidays(),
+        'Testing holidays with no arguments for Date::Holidays::GB' );
+
+    ok( $dh->holidays( year => 2014 ),
+        'Testing holidays with argument for Date::Holidays::GB' );
 }
 
 done_testing();
