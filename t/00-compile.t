@@ -4,7 +4,7 @@ use warnings;
 
 # this test was generated with Dist::Zilla::Plugin::Test::Compile 2.045
 
-use Test::More  tests => 21;
+use Test::More  tests => 16;
 
 
 
@@ -21,15 +21,10 @@ my @module_files = (
     'Date/Holidays/Adapter/GB.pm',
     'Date/Holidays/Adapter/JP.pm',
     'Date/Holidays/Adapter/KR.pm',
+    'Date/Holidays/Adapter/LOCAL.pm',
     'Date/Holidays/Adapter/NO.pm',
     'Date/Holidays/Adapter/PL.pm',
-    'Date/Holidays/Adapter/PT.pm',
-    'Date/Holidays/Exception/AdapterInitialization.pm',
-    'Date/Holidays/Exception/AdapterLoad.pm',
-    'Date/Holidays/Exception/InvalidCountryCode.pm',
-    'Date/Holidays/Exception/NoCountrySpecified.pm',
-    'Date/Holidays/Exception/SuperAdapterLoad.pm',
-    'Date/Holidays/Exception/UnsupportedMethod.pm'
+    'Date/Holidays/Adapter/PT.pm'
 );
 
 

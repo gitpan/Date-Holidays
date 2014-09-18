@@ -10,10 +10,14 @@ use ExtUtils::MakeMaker ;
 
 
 my %WriteMakefileArgs = (
-  "ABSTRACT" => "a Date::Holidays::* OOP Adapter aggregator",
+  "ABSTRACT" => "Date::Holidays::* adapter and aggregator for all your holiday needs",
   "AUTHOR" => "Jonas B. Nielsen <jonasbn\@cpan.org>",
+  "BUILD_REQUIRES" => {
+    "Module::Build" => "0.30"
+  },
   "CONFIGURE_REQUIRES" => {
-    "ExtUtils::MakeMaker" => 0
+    "ExtUtils::MakeMaker" => 0,
+    "Module::Build" => "0.30"
   },
   "DISTNAME" => "Date-Holidays",
   "EXE_FILES" => [],
@@ -22,11 +26,17 @@ my %WriteMakefileArgs = (
   "PREREQ_PM" => {
     "Carp" => 0,
     "DateTime" => 0,
-    "Error" => 0,
+    "Env" => 0,
+    "File::Slurp" => 0,
+    "FindBin" => 0,
+    "JSON" => 0,
     "Locale::Country" => 0,
     "Module::Load" => 0,
     "Scalar::Util" => 0,
-    "Test::More" => 0
+    "Test::Class" => 0,
+    "Test::More" => 0,
+    "TryCatch" => 0,
+    "constant" => 0
   },
   "TEST_REQUIRES" => {
     "File::Spec" => 0,
@@ -34,9 +44,9 @@ my %WriteMakefileArgs = (
     "IPC::Open3" => 0,
     "Test::More" => 0
   },
-  "VERSION" => "0.22",
+  "VERSION" => "1.00",
   "test" => {
-    "TESTS" => "t/*.t t/Adapter/*.t"
+    "TESTS" => "t/*.t"
   }
 );
 
@@ -44,14 +54,21 @@ my %WriteMakefileArgs = (
 my %FallbackPrereqs = (
   "Carp" => 0,
   "DateTime" => 0,
-  "Error" => 0,
+  "Env" => 0,
+  "File::Slurp" => 0,
   "File::Spec" => 0,
+  "FindBin" => 0,
   "IO::Handle" => 0,
   "IPC::Open3" => 0,
+  "JSON" => 0,
   "Locale::Country" => 0,
+  "Module::Build" => "0.30",
   "Module::Load" => 0,
   "Scalar::Util" => 0,
-  "Test::More" => 0
+  "Test::Class" => 0,
+  "Test::More" => 0,
+  "TryCatch" => 0,
+  "constant" => 0
 );
 
 

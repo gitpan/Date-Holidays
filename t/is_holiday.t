@@ -3,18 +3,18 @@ use strict;
 use Module::Load qw(load);
 use Test::More;
 
-my $verbose = 0;
 my ( $dh, $holidays_hashref );
 
 use lib qw(lib ../lib);
+
 use_ok('Date::Holidays');
 
 SKIP: {
     eval { load Date::Holidays::DK };
-    skip "Date::Holidays::DK not installed", 8 if ($@);
+    skip "Date::Holidays::DK not installed", 6 if ($@);
 
     eval { load Date::Holidays::NO };
-    skip "Date::Holidays::NO not installed", 8 if ($@);
+    skip "Date::Holidays::NO not installed", 6 if ($@);
 
     $dh = Date::Holidays->new( countrycode => 'dk' );
 
@@ -40,20 +40,12 @@ SKIP: {
     is( keys %{$holidays_hashref},
         2, 'Testing to see if we got two definitions' );
 
-    foreach my $country ( keys %{$holidays_hashref} ) {
-        if ( $holidays_hashref->{$country} ) {
-            print STDERR "$country = " . $holidays_hashref->{$country} . "\n"
-                if $verbose;
-        }
-        ok( $country . 'Testing our specified countries' );
-    }
-
     ok( $holidays_hashref->{'dk'}, 'Testing whether DK is set' );
     ok( $holidays_hashref->{'no'}, 'Testing whether NO is set' );
 }
 
 ok( $holidays_hashref = Date::Holidays->is_holiday(
-        year  => 2004,
+        year  => 2014,
         month => 12,
         day   => 25,
     ),
@@ -62,7 +54,7 @@ ok( $holidays_hashref = Date::Holidays->is_holiday(
 
 SKIP: {
     eval { load Date::Holidays::PT };
-    skip "Date::Holidays::PT not installed", 3 if $@;
+    skip "Date::Holidays::PT not installed", 2 if $@;
 
     ok( $holidays_hashref->{'pt'},
         'Checking for Portuguese first day of year' );
@@ -71,8 +63,18 @@ SKIP: {
 }
 
 SKIP: {
+    eval { load Date::Holidays::BR };
+    skip "Date::Holidays::BR not installed", 2 if $@;
+
+    ok( $holidays_hashref->{'br'},
+        'Checking for Brazillian first day of year' );
+
+    can_ok('Date::Holidays::BR', qw(holidays is_holiday));
+}
+
+SKIP: {
     eval { load Date::Holidays::AU };
-    skip "Date::Holidays::AU not installed", 3 if $@;
+    skip "Date::Holidays::AU not installed", 2 if $@;
 
     ok( !$holidays_hashref->{'au'},
         'Checking for Australian first day of year' );
@@ -92,8 +94,19 @@ SKIP: {
 }
 
 SKIP: {
+    eval { load Date::Holidays::PL };
+    skip "Date::Holidays::PL not installed", 3 if $@;
+
+    ok( $holidays_hashref->{'pl'},
+        'Checking for Polish first day of year' );
+
+    ok(Date::Holidays::PL->can('is_holiday'));
+    ok(Date::Holidays::PL->can('holidays'));
+}
+
+SKIP: {
     eval { load Date::Holidays::ES };
-    skip "Date::Holidays::ES not installed", 3 if $@;
+    skip "Date::Holidays::ES not installed", 2 if $@;
 
     ok( $holidays_hashref->{'es'}, 'Checking for Spanish christmas' );
 
@@ -104,7 +117,7 @@ SKIP: {
     eval { load Date::Holidays::NZ };
     skip "Date::Holidays::NZ not installed", 3 if $@;
 
-    ok( !$holidays_hashref->{'nz'}, 'Checking for New Zealandian christmas' );
+    ok( $holidays_hashref->{'nz'}, 'Checking for New Zealandian christmas' );
 
     ok(! Date::Holidays::NZ->can('holidays'));
     ok(! Date::Holidays::NZ->can('is_holiday'));
@@ -112,7 +125,7 @@ SKIP: {
 
 SKIP: {
     eval { load Date::Holidays::NO };
-    skip "Date::Holidays::NO not installed", 3 if $@;
+    skip "Date::Holidays::NO not installed", 2 if $@;
 
     ok( $holidays_hashref->{'no'}, 'Checking for Norwegian christmas' );
 
@@ -130,6 +143,16 @@ SKIP: {
 }
 
 SKIP: {
+    eval { load Date::Holidays::KR };
+    skip "Date::Holidays::KR not installed", 3 if $@;
+
+    ok(! $holidays_hashref->{'kr'}, 'Checking for Korean holiday' );
+
+    ok(Date::Holidays::KR->can('holidays'));
+    ok(Date::Holidays::KR->can('is_holiday'));
+}
+
+SKIP: {
     eval { load Date::Holidays::CN };
     skip "Date::Holidays::CN not installed", 3 if $@;
 
@@ -144,8 +167,8 @@ SKIP: {
     eval { load Date::Holidays::GB };
     skip "Date::Holidays::GB not installed", 5 if $@;
 
-    is( $holidays_hashref->{'gb'}, '', 'Checking for English holiday' );
-
+    ok( $holidays_hashref->{'gb'}, 'Checking for English holiday' );
+    
     can_ok('Date::Holidays::GB', qw(holidays is_holiday));
 
     ok( my $holidays_hashref_sct = Date::Holidays::GB::holidays(year => 2014, regions => ['SCT']));

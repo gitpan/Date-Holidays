@@ -3,18 +3,14 @@ package Date::Holidays::Adapter;
 use strict;
 use warnings;
 use Carp;
-use Error qw(:try);
+use TryCatch;
 use Module::Load qw(load);
 use Locale::Country;
 use Scalar::Util qw(blessed);
 
-use Date::Holidays::Exception::AdapterLoad;
-use Date::Holidays::Exception::AdapterInitialization;
-use Date::Holidays::Exception::UnsupportedMethod;
-
 use vars qw($VERSION);
 
-$VERSION = '0.22';
+$VERSION = '1.00';
 
 sub new {
     my ($class, %params) = @_;
@@ -24,23 +20,13 @@ sub new {
         _adaptee     => undef,
     }, $class || ref $class;
 
-    try {
-        my $adaptee = $self->_fetch(\%params);
+    my $adaptee = $self->_fetch(\%params);
 
-        if ($adaptee) {
-            $self->{_adaptee} = $adaptee;
-        } else {
-            throw Date::Holidays::Exception::AdapterInitialization('Unable to initialize adaptee class');
-        }
+    if ($adaptee) {
+        $self->{_adaptee} = $adaptee;
+    } else {
+        die 'Unable to initialize adaptee class';
     }
-    catch Date::Holidays::Exception::AdapterLoad with {
-        my $E = shift;
-        throw Date::Holidays::Exception::AdapterInitialization($E->{-text});
-    }
-    otherwise {
-        my $E = shift;
-        $E->throw;
-    };
 
     return $self;
 }
@@ -49,75 +35,143 @@ sub holidays {
     my ($self, %params) = @_;
 
     my $r;
-    try {
-        my $method = 'holidays';
-        my $sub = $self->{_adaptee}->can('holidays');
+    my $adaptee;
 
+    # Adaptee has a constructor
+    if (    $self->{_adaptee}->can('new')
+        and $self->isa('Date::Holidays::Adapter')) {
+
+        $adaptee = $self->{_adaptee}->new();
+
+    # Adaptee has no constructor
+    } else {
+        $adaptee = $self->{'_adaptee'};
+    }
+
+    if (blessed $adaptee) {
+
+        # Adapting non-polymorphic interface
+        my $method = "$self->{'_countrycode'}_holidays";
+        my $sub = $adaptee->can($method);
+
+        # Adapting polymorphic interface
         if (! $sub) {
-            $method = "$self->{_countrycode}_holidays";
-            $sub = $self->{_adaptee}->can($method);
+            $method = 'holidays';
+            $sub = $adaptee->can($method);
+        }
+
+        if ($sub) {
+            $r = $adaptee->$method($params{'year'});
+        }
+
+        return $r;
+
+    } else {
+
+        # Adapting non-polymorphic interface
+        my $method = "$self->{'_countrycode'}_holidays";
+        my $sub = $adaptee->can($method);
+
+        # Adapting polymorphic interface
+        if (! $sub) {
+            $sub = $adaptee->can('holidays');
         }
 
         if ($sub) {
             $r = &{$sub}($params{'year'});
         }
-    }
-    catch Date::Holidays::Exception::UnsupportedMethod with {
-        my $E = shift;
-        $E->throw();
-    };
 
-    return $r;
+        return $r;
+    }
 }
 
 sub is_holiday {
     my ($self, %params) = @_;
 
     my $r;
-    try {
+    my $adaptee;
+    
+    if (    $self->{'_adaptee'}->can('new')
+        and $self->isa('Date::Holidays::Adapter')) {
 
-        if (    $self->{_adaptee}->can('new')
-            and $self->isa('Date::Holidays::Adapter')) {
+        $adaptee = $self->{'_adaptee'}->new();
+    
+    } else {
+        $adaptee = $self->{'_adaptee'};
+    }
 
-            my $object = $self->{_adaptee}->new();
+    if (blessed $adaptee) {
 
-            $r = $object->is_holiday($params{'year'}, $params{'month'}, $params{'day'});
+        # Adapting non-polymorphic interface
+        my $method = "is_$self->{'_countrycode'}_holiday";
 
+        if ($adaptee->can($method)) {
+
+            $r = $adaptee->$method(
+                $params{'year'}, 
+                $params{'month'}, 
+                $params{'day'}
+            );
+
+            return $r;
+
+        # Adapting polymorphic interface
         } else {
 
-            my $method = "is_$self->{_countrycode}_holiday";
-            my $sub = $self->{_adaptee}->can($method);
-
-            if ($sub) {
-                $r = &{$sub}($params{'year'}, $params{'month'}, $params{'day'});
+            if ($adaptee->can('is_holiday')) {
+                $r = $adaptee->is_holiday(
+                    $params{'year'}, 
+                    $params{'month'}, 
+                    $params{'day'}
+                );
             }
 
-            $method = "is_holiday";
-            $sub = $self->{_adaptee}->can($method);
-
-            if ($sub) {
-                $r = &{$sub}($params{'year'}, $params{'month'}, $params{'day'});
-            }
-
+            return $r;
         }
+
+    } else {
+        # Adapting non-polymorphic interface
+        my $method = "is_$self->{_countrycode}_holiday";
+        my $sub = $adaptee->can($method);
+
+        # We have an interface
+        if ($sub) {
+
+            $r = &{$sub}(
+                $params{'year'}, 
+                $params{'month'}, 
+                $params{'day'}
+            );
+
+            return $r;
+        }
+
+        # Adapting polymorphic interface
+        $sub = $adaptee->can('is_holiday');
+
+        if ($sub) {
+            $r = &{$sub}(
+                $params{'year'}, 
+                $params{'month'}, 
+                $params{'day'}
+            );
+
+            return $r;
+        }        
     }
-    catch Date::Holidays::Exception::UnsupportedMethod with {
-        my $E = shift;
-        $E->throw();
-    };
 
     return $r;
 }
 
 sub _load {
-    my ($self, $module) = @_;
+    my ( $self, $module ) = @_;
 
     # Trying to load module
-    eval { load $module; }; #From Module::Load
+    eval { load $module; }; # From Module::Load
 
     # Asserting success of load
     if ($@) {
-        throw Date::Holidays::Exception::AdapterLoad("Unable to load: $module");
+        die "Unable to load: $module - $!\n";
     }
 
     # Returning name of loaded module upon success
@@ -128,37 +182,22 @@ sub _fetch {
     my ( $self, $params ) = @_;
 
     # Do we have a country code?
-    if ( !$self->{_countrycode} ) {
-        croak "No country code specified";
+    if ( !$self->{'_countrycode'} ) {
+        die "No country code specified";
     }
 
     # Do we do country code assertion?
     if ( !$params->{nocheck} ) {
 
         # Is our country code valid?
-        if ( !code2country($self->{_countrycode}) ) { #from Locale::Country
-
-            #TODO: should this throw an exception like i Date::Holidays::_fetch
-            carp "$self->{_countrycode} is not a valid country code";
-            return;
+        if ( !code2country($self->{'_countrycode'}) ) { # From Locale::Country
+            die "$self->{_countrycode} is not a valid country code";
         }
     }
 
-    my $module;
-
     # Trying to load module for country code
-    try {
-        $module = 'Date::Holidays::' . uc $self->{_countrycode};
-        $self->_load($module);
-    }
-    catch Date::Holidays::Exception::AdapterLoad with {
-        my $E = shift;
-        $E->throw;
-    }
-    otherwise {
-        my $E = shift;
-        $E->throw;
-    };
+    my $module = 'Date::Holidays::' . uc $self->{'_countrycode'};
+    $self->_load($module);
 
     # Returning name of loaded module upon success
     return $module;
@@ -174,7 +213,7 @@ Date::Holidays::Adapter - an adapter class for Date::Holidays::* modules
 
 =head1 VERSION
 
-This POD describes version 0.22 of Date::Holidays::Adapter
+This POD describes version 1.00 of Date::Holidays::Adapter
 
 =head1 SYNOPSIS
 
@@ -316,9 +355,13 @@ support the called method. (SEE: METHODS/SUBROUTINES).
 
 =item * L<Carp>
 
-=item * L<Error>
-
 =item * L<Module::Load>
+
+=item * L<TryCatch>
+
+=item * L<Locale::Country>
+
+=item * L<Scalar::Util>
 
 =back
 
@@ -343,10 +386,7 @@ Jonas B. Nielsen, (jonasbn) - C<< <jonasbn@cpan.org> >>
 L<Date::Holidays> and related modules are (C) by Jonas B. Nielsen, (jonasbn)
 2004-2014
 
-L<Date::Holidays> and related modules are released under the artistic license
+Date-Holidays and related modules are released under the Artistic License 2.0
 
-The distribution is licensed under the Artistic License, as specified
-by the Artistic file in the standard perl distribution
-(http://www.perl.com/language/misc/Artistic.html).
 
 =cut

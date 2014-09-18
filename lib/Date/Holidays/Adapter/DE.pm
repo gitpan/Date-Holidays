@@ -2,12 +2,13 @@ package Date::Holidays::Adapter::DE;
 
 use strict;
 use warnings;
-use Error qw(:try);
+use Carp;
+
 use base 'Date::Holidays::Adapter';
 
 use vars qw($VERSION);
 
-$VERSION = '0.22';
+$VERSION = '1.00';
 
 sub holidays {
     my ($self, %params) = @_;
@@ -21,8 +22,7 @@ sub holidays {
 }
 
 sub is_holiday {
-    throw Date::Holidays::Exception::UnsupportedMethod('is_holiday');
-    return;
+    croak "is_holiday is unimplemented for ".__PACKAGE__;
 }
 
 1;
@@ -35,7 +35,7 @@ Date::Holidays::Adapter::DE - an adapter class for Date::Holidays::DE
 
 =head1 VERSION
 
-This POD describes version 0.22 of Date::Holidays::Adapter::DE
+This POD describes version 1.00 of Date::Holidays::Adapter::DE
 
 =head1 DESCRIPTION
 
@@ -66,36 +66,7 @@ concatenated.
 
 =head1 DIAGNOSTICS
 
-=over
-
-=item * L<Date::Holidays::Exception::AdapterLoad>
-
-This exception is thrown when L<Date::Holidays::Adapter> attempts to load an
-actual adapter implementation. This exception is recoverable to the extend
-that is caught and handled internally.
-
-When caught the SUPER adapter is attempted loaded, L<Date::Holidays::Adapter>
-if this however fails L<Date::Holidays::Exception::SuperAdapterLoad> it thrown
-see below.
-
-=item * L<Date::Holidays::Exception::AdapterInitialization>
-
-This exception is thrown when in was not possible to load either a
-implementation of a given adapter, or the SUPER adapter
-L<Date::Holidays::Adapter>.
-
-=item * L<Date::Holidays::Exception::NoCountrySpecified>
-
-The exception is thrown if a country code is provided, which is not listed
-in L<Locale::Country>, which lists ISO 3166 codes, which is the unique 2
-character strings assigned to each country in the world.
-
-=item * L<Date::Holidays::Exception::UnsupportedMethod>
-
-Exception thrown in the case where the loaded and initialized module does not
-support the called method. (SEE: METHODS/SUBROUTINES).
-
-=back
+Please refer to DIAGNOSTICS in L<Date::Holidays>
 
 =head1 DEPENDENCIES
 
@@ -104,16 +75,6 @@ support the called method. (SEE: METHODS/SUBROUTINES).
 =item * L<Date::Japanese::Holiday>
 
 =item * L<Date::Holidays::Adapter>
-
-=item * L<Date::Holidays::Exception::UnsupportedMethod>
-
-=item * L<Date::Holidays::Exception::InvalidCountryCode>
-
-=item * L<Date::Holidays::Exception::NoCountrySpecified>
-
-=item * L<Date::Holidays::Exception::UnsupportedMethod>
-
-=item * L<Error>
 
 =back
 
@@ -150,10 +111,6 @@ Jonas B. Nielsen, (jonasbn) - C<< <jonasbn@cpan.org> >>
 L<Date::Holidays> and related modules are (C) by Jonas B. Nielsen, (jonasbn)
 2004-2014
 
-L<Date::Holidays> and related modules are released under the artistic license
-
-The distribution is licensed under the Artistic License, as specified
-by the Artistic file in the standard perl distribution
-(http://www.perl.com/language/misc/Artistic.html).
+Date-Holidays and related modules are released under the Artistic License 2.0
 
 =cut

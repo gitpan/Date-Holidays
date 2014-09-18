@@ -7,18 +7,12 @@ use Locale::Country qw(all_country_codes code2country);
 use Module::Load qw(load);
 use Carp;
 use DateTime;
-use Error qw(:try);
-
-use Date::Holidays::Exception::AdapterLoad;
-use Date::Holidays::Exception::SuperAdapterLoad;
-use Date::Holidays::Exception::AdapterInitialization;
-use Date::Holidays::Exception::InvalidCountryCode;
-use Date::Holidays::Exception::NoCountrySpecified;
-use Date::Holidays::Exception::UnsupportedMethod;
+use TryCatch;
+use Scalar::Util qw(blessed);
 
 use base 'Date::Holidays::Adapter';
 
-$VERSION = '0.22';
+$VERSION = '1.00';
 
 sub new {
     my ( $class, %params ) = @_;
@@ -36,16 +30,9 @@ sub new {
             $self->{'_inner_class'}
                 = $self->_fetch( { nocheck => $params{'nocheck'}, } );
         }
-        catch Date::Holidays::Exception::AdapterLoad with {
-            $self = undef;
-        }
-        catch Date::Holidays::Exception::SuperAdapterLoad with {
-            $self = undef;
-        };
 
     } else {
-        throw Date::Holidays::Exception::NoCountrySpecified(
-            "No country code specified");
+        die "No country code specified";
     }
 
     if (   $self
@@ -63,13 +50,9 @@ sub new {
             } else {
                 $self = undef;
             }
-        }
-        catch Date::Holidays::Exception::AdapterLoad with {
+        } catch ($error) {
             $self = undef;
         }
-        catch Date::Holidays::Exception::AdapterInitialization with {
-            $self = undef;
-        };
 
     } elsif ( !$self->{'_inner_class'} ) {
         $self = undef;
@@ -81,12 +64,50 @@ sub new {
 sub holidays {
     my ( $self, %params ) = @_;
 
+    # Our result
     my $r;
-    if ( $self->{'_inner_object'}->can('holidays') ) {
-        $r = $self->{'_inner_object'}->holidays( year => $params{'year'}, state => $params{'state'}, regions => $params{'regions'} );
+
+    # Did we get a country list
+    if ( not $params{'countries'} ) {
+
+        #No countries - so we create a list
+        my @countries = all_country_codes(); # From Locale::Country
+        @countries = sort @countries;
+
+        # We stick the complete list of countries to the parameters
+        $params{'countries'} = \@countries;
+    }
+
+    $r = $self->{'_inner_object'}->holidays(%params);
+
+    return $r;
+}
+
+sub is_holiday {
+    my ( $self, %params ) = @_;
+
+    # Our result
+    my $r;
+
+    if ( not $params{'countries'} ) {
+        if (blessed $self) {
+            $r = $self->{'_inner_object'}->is_holiday(%params);
+
+        } else {
+            my @countries = all_country_codes(); # From Locale::Country
+            @countries = sort @countries;
+            $params{'countries'} = \@countries;
+
+            $r = __PACKAGE__->_check_countries(%params);
+        }
+
     } else {
-        throw Date::Holidays::Adapter::CannotHolidays(
-            "Unable to call 'holidays' for: $self->{'_countrycode'}");
+        if (blessed $self) {
+            $r = $self->_check_countries(%params);
+
+        } else {
+            $r = __PACKAGE__->_check_countries(%params);
+        }
     }
 
     return $r;
@@ -114,96 +135,65 @@ sub holidays_dt {
     return \%dts;
 }
 
-sub is_holiday {
-    my ( $self, %params ) = @_;
-
-    my $r;
-    if ( !ref $self ) {
-
-        if ( not $params{'countries'} ) {
-            my @countries = all_country_codes();    #from Locale::Country
-
-            @countries = sort @countries;
-
-            $params{'countries'} = \@countries;
-        }
-        $r = __PACKAGE__->_check_countries(%params);
-
-    } elsif ( $params{'countries'} ) {
-        $r = __PACKAGE__->_check_countries(%params);
-
-    } elsif ( $self->{'_countrycode'} ) {
-
-        if (    $self->{'_inner_object'}
-            and $self->{'_inner_object'}->can('is_holiday') )
-        {
-
-            $r = $self->{'_inner_object'}->is_holiday(
-                year  => $params{'year'},
-                month => $params{'month'},
-                day   => $params{'day'},
-                state => $params{'state'},
-                regions => $params{'regions'},
-            );
-
-        } else {
-            throw Date::Holidays::Adapter::CannotIsHoliday(
-                "Unable to call 'is_holiday' for: $self->{'_countrycode'}");
-        }
-    } else {
-        throw Date::Holidays::Adapter::NoCalender(
-            "No national calendar initialized");
-    }
-
-    return $r;
-}
-
 sub _check_countries {
     my ( $self, %params ) = @_;
 
-    my %result = ();
+    my $result = {};
+    my $precedent_calendar = '';
 
     foreach my $country ( @{ $params{'countries'} } ) {
 
+        #The list of countries is ordered
+        if ($country =~ m/^\+(\w+)/) {
+            $country = $1;
+            $precedent_calendar = $country;
+        }
+
         try {
-            my $dh = __PACKAGE__->new( countrycode => $country );
+            my $dh = $self->new( countrycode => $country );
 
             if ( !$dh ) {
-                print STDERR ("Unable to locate module for $country\n");
-                return;    #we return instead of using next since we are in
-                           #the context of a sub (try)
+                die "Unable to initialize Date::Holidays for country: $country\n";
             }
 
+            #TODO add handling of state and region
             my $r = $dh->is_holiday(
                 year  => $params{'year'},
                 month => $params{'month'},
-                day   => $params{'day'}
+                day   => $params{'day'},
             );
 
-            if ($r) {
-                $result{$country} = $r;
-            } else {
-                $result{$country} = '';
+            if ($precedent_calendar eq $country) {
+                $self->{precedent_calendar} = $dh;
+            }
+
+            # handling precedent calendar
+            if ($precedent_calendar and
+                $precedent_calendar ne $country) {
+
+                #TODO add handling of state and region
+                my $holiday = $self->{precedent_calendar}->is_holiday(
+                    year  => $params{'year'},
+                    month => $params{'month'},
+                    day   => $params{'day'},
+                );
+
+                # our precedent calendar dictates overwrite or nullification                
+                if (defined $holiday) {
+                    $r = $holiday;
+                }
+            }
+
+            if (defined $r) {
+                $result->{$country} = $r;
             }
         }
-        catch Date::Holidays::Exception::InvalidCountryCode with {
-            my $E = shift;
-            print STDERR "$E->{-text}";
-            $result{country} = undef;
+        catch ($error) {
+            warn $error;
         }
-        catch Date::Holidays::Exception::NoCountrySpecified with {
-            my $E = shift;
-            print STDERR "$E->{-text}";
-            $result{country} = undef;
-        }
-        catch Date::Holidays::Exception::UnsupportedMethod with {
-            my $E = shift;
-            print STDERR "$E->{-text}";
-            $result{country} = undef;
-        };
     }
 
-    return \%result;
+    return $result;
 }
 
 sub is_holiday_dt {
@@ -216,38 +206,20 @@ sub is_holiday_dt {
     );
 }
 
-sub _load {
-    my ( $self, $module ) = @_;
-
-    # Trying to load module
-    eval { load $module; };    #From Module::Load
-
-    # Asserting success of load
-    if ($@) {
-        throw Date::Holidays::Exception::SuperAdapterLoad(
-            "Unable to load: $module");
-    }
-
-    # Returning name of loaded module upon success
-    return $module;
-}
-
 sub _fetch {
     my ( $self, $params ) = @_;
 
     # Do we have a country code?
-    if ( !$self->{_countrycode} ) {
-        throw Date::Holidays::Exception::NoCountrySpecified(
-            "No country code specified");
+    if ( !$self->{'_countrycode'} ) {
+        die "No country code specified";
     }
 
     # Do we do country code assertion?
-    if ( !$params->{nocheck} ) {
+    if ( !$params->{'nocheck'} ) {
 
-        # Is our country code valid?
-        if ( !code2country( $self->{_countrycode} ) ) {  #from Locale::Country
-            throw Date::Holidays::Exception::InvalidCountryCode(
-                "$self->{_countrycode} is not a valid country code");
+        # Is our country code valid or local?
+        if ( $self->{'_countrycode'} ne 'local' and !code2country( $self->{'_countrycode'} ) ) {  #from Locale::Country
+            die "$self->{_countrycode} is not a valid country code";
         }
     }
 
@@ -255,21 +227,18 @@ sub _fetch {
 
     # Trying to load adapter module for country code
     try {
-        $module = 'Date::Holidays::Adapter::' . uc $self->{_countrycode};
-        $self->SUPER::_load($module);
+        # We load an adapter implementation
+        $module = 'Date::Holidays::Adapter::' . uc $self->{'_countrycode'};
+
+        $self->_load($module);
+
     }
-    catch Date::Holidays::Exception::AdapterLoad with {
+    catch ($error) {
 
         # Falling over to SUPER adapter class
-        try {
-            $module = 'Date::Holidays::Adapter';
-            $self->_load($module);
-        }
-        catch Date::Holidays::Exception::SuperAdapterLoad with {
-            my $E = shift;
-            $E->throw;
-        };
-    };
+        $module = 'Date::Holidays::Adapter';
+        $self->_load($module);
+    }
 
     # Returning name of loaded module upon success
     return $module;
@@ -291,31 +260,49 @@ __END__
 
 =head1 NAME
 
-Date::Holidays - a Date::Holidays::* OOP Adapter aggregator
+Date::Holidays - Date::Holidays::* adapter and aggregator for all your holiday needs
 
 =head1 VERSION
 
-This POD describes version 0.22 of Date::Holidays
+This POD describes version 1.00 of Date::Holidays
+
+=head1 FEATURES
+
+=over
+
+=item * Exposes a uniform interface towards modules in the Date::Holidays::* namespace
+
+=item * Inquire whether a certain date is a holiday in a specific country or a set of countries
+
+=item * Inquire for a holidays for a given year for a specific country or a set of countries
+
+=item * Overwrite/rename/suppress national holidays with your own calendar 
+
+=back
 
 =head1 SYNOPSIS
 
     use Date::Holidays;
 
+    # Initialize a national holidays using the ISO 3361 country code
     my $dh = Date::Holidays->new(
         countrycode => 'dk'
     );
 
-    $holidayname = $dh->is_holiday(
+    # Inquire and get a local name for a holiday if it is a national holiday
+    my $holidayname = $dh->is_holiday(
         year  => 2004,
         month => 12,
         day   => 25
     );
 
-    $hashref = $dh->holidays(
+    # Inquire and get a set of local namenames for national holiday in a given country
+    my $hashref = $dh->holidays(
         year => 2004
     );
 
-
+    # Inquire and get local names for a set of countries, where the specific date is a
+    # national holiday
     $holidays_hashref = Date::Holidays->is_holiday(
         year      => 2004,
         month     => 12,
@@ -327,15 +314,9 @@ This POD describes version 0.22 of Date::Holidays
         print $holidays_hashref->{$country}."\n";
     }
 
-
-    $holidays_hashref = Date::Holidays->is_holiday(
-        year      => 2004,
-        month     => 12,
-        day       => 25,
-    );
-
-
-    #Example of a module with additional parameters
+    # Example of a module with additional parameters
+    # Australia is divided into states with local holidays
+    # using ISO-3166-2 codes
     my $dh = Date::Holidays->new(
         countrycode => 'au'
     );
@@ -352,7 +333,9 @@ This POD describes version 0.22 of Date::Holidays
         state => 'TAS',
     );
 
-    #Another example of a module with additional parameters
+    # Another example of a module with additional parameters
+    # Great Britain is divided into regions with local holidays
+    # using ISO-3166-2 codes
     my $dh = Date::Holidays->new(
         countrycode => 'gb'
     );
@@ -371,25 +354,58 @@ This POD describes version 0.22 of Date::Holidays
 
 =head1 DESCRIPTION
 
-Date::Holidays is an aggregator of adapters exposing a uniform API to a set of
-modules either in the Date::Holidays::* namespace of elsewhere. All of these
-modules deliver methods and information on national calendars.
+Date::Holidays is an adapters exposing a uniform API to a set of dsitributions 
+in the Date::Holidays::* namespace. All of these modules deliver methods and 
+information on national calendars, but no standardized API exist.
 
-The module seem to more or less follow a defacto standard (see: also the generic
+The distributions more or less follow a I<de> I<facto> standard (see: also the generic
 adapter L<Date::Holidays::Adapter>), but the adapters are implemented to uniform
 this and Date::Holidays exposes a more readable API and at the same time it
-provides an OOP interface, to these modules, which primarily holds a procuderal
-API.
+provides an OO interface, to these diverse implementations, which primarily 
+holds a are produceral.
 
 As described below it is recommended that a certain API is implemented (SEE:
 B<holidays> and B<is_holiday> below), but taking the adapter strategy into
 consideration this does not matter, or we attempt to do what we can with what is
-provided.
+available on CPAN.
 
-If you are an author who wants to comply to the suggested, either
-look at some of the other modules in the Date::Holidays::* namespace to get an
-idea of the de facto standard or have a look at L<Date::Holidays::Abstract> and
+If you are an module author/CPAN contributor who wants to comply to the suggested, 
+either look at some of the other modules in the Date::Holidays::* namespace to get an
+idea of the I<de> I<facto> standard or have a look at L<Date::Holidays::Abstract> and
 L<Date::Holidays::Super> - or write me.
+
+In addition to the adapter feature, Date::Holidays also do aggregation, so you 
+can combine calendars and you can overwrite and redefined existing calendars.
+
+=head2 DEFINING YOUR OWN CALENDAR
+
+As mentioned in the FEATURES section it is possible to create your own local calendar.
+
+This can be done using a L<JSON> file with your local definitions:
+
+    {
+        "1501" : "jonasbn's birthday"
+    }
+
+This also mean you can overwrite your national calendar:
+
+    {
+        "1225" : ""
+    }
+
+
+You can specify either month plus day for a recurring holiday. If you you want to define
+a holiday for a specific year, simply extend the date with year:
+
+    {
+        "20141225" : ""
+    }
+
+In order for the calendar to be picked up by Date::Holidays, set the environment variable:
+
+    $HOLIDAYS_FILE
+
+This should point to the JSON file.
 
 =head1 SUBROUTINES/METHODS
 
@@ -399,12 +415,13 @@ This is the constructor. It takes the following parameters:
 
 =over
 
-=item countrycode (MANDATORY, see below), two letter unique code representing a
+=item countrycode (MANDATORY, see below), unique two letter code representing a
 country name.  Please refer to ISO3166 (or L<Locale::Country>)
 
 =item nocheck (optional), if set to true the countrycode specified will not be
-validated against ISO 3166, for existance, so you can build fake holidays for
-fake countries, I currently use this for test.
+validated against a list of known country codes for existance, so you can build 
+fake holidays for fake countries, I currently use this for test. This parameter
+might disappear in the future.
 
 =back
 
@@ -489,7 +506,7 @@ is a hashref with the country codes as keys and the values as the result.
 
 =over
 
-=item undef if the country has no module or the data could not be obtained
+=item C<undef> if the country has no module or the data could not be obtained
 
 =item a name of the holiday if a holiday is present
 
@@ -623,44 +640,25 @@ L<Date::Holidays::Adapter>.
 
 =over
 
-=item * L<Date::Holidays::Exception::AdapterLoad>
+=item * No country code specified
 
-This exception is thrown when L<Date::Holidays::Adapter> attempts to load an
-actual adapter implementation. This exception is recoverable to the extend
-that is caught and handled internally.
+No country code has been specified.
 
-When caught the SUPER adapter is attempted loaded, L<Date::Holidays::Adapter>
-if this however fails L<Date::Holidays::Exception::SuperAdapterLoad> it thrown
-see below.
+=item * Unable to initialize Date::Holidays for country: <countrycode>
 
-=item * L<Date::Holidays::Exception::SuperAdapterLoad>
-
-This exception is thrown when L<Date::Holidays> attempts to load the
-SUPER adapter L<Date::Holidays::Adapter>, if this fail, we are out of luck and
-we throw the L<Date::Holidays::Exception::AdapterInitialization> exception.
-
-=item * L<Date::Holidays::Exception::AdapterInitialization>
-
-This exception is thrown when in was not possible to load either a
-implementation of a given adapter, or the SUPER adapter
-L<Date::Holidays::Adapter>.
-
-=item * L<Date::Holidays::Exception::NoCountrySpecified>
-
-The exception is thrown if a country code is provided, which is not listed
-in L<Locale::Country>, which lists ISO 3166 codes, which is the unique 2
-letter strings assigned to each country in the world.
-
-=item * 'Unable to locate module for <country>' this method is thrown from
-the B<_check_countries> method, it bails out if it cannot find and load the
-actual implementation of a module with the name Date::Holidays::<country> for
-the specified country. This however is a mere warning.
+This message is emitted if a given country code cannot be loaded.
 
 =back
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
-No special configuration or environment is required.
+As mentioned in the section on defining your own calendar. You have to 
+set the environment variable:
+
+    $HOLIDAYS_FILE
+
+This environment variable should point to a JSON file containing holiday definitions
+to be used by L<Date::Holidays::Adapter::Local>.
 
 =head1 DEPENDENCIES
 
@@ -674,9 +672,11 @@ No special configuration or environment is required.
 
 =item * L<Module::Load>
 
-=item * L<Error>
-
 =item * L<Date::Holidays::Adapter>
+
+=item * L<TryCatch>
+
+=item * L<Scalar::Util>
 
 =back
 
@@ -693,10 +693,6 @@ for L<Date::Holidays::AU> for documentation on this.
 
 L<Date::Holidays::DE> and L<Date::Holidays::UK> does not implement the
 B<holidays> methods
-
-The actual code for United Kingdom in ISO 3166 is 'GB' (SEE L<Locale::Country>),
-but the module is called L<Date::Holidays::UK> and so it the adapter class
-L<Date::Holidays::Adapter::GB> in this distribution to avoid confusion or?
 
 The adaptee module for L<Date::Holidays::Adapter> is named:
 L<Date::Japanese::Holiday>, but the adapter class is following the general
@@ -719,16 +715,29 @@ or by sending mail to
 
 =head1 TEST COVERAGE
 
-Test coverage in version 0.06
+Test coverage in version 1.00
 
     ---------------------------- ------ ------ ------ ------ ------ ------ ------
     File                           stmt   bran   cond    sub    pod   time  total
     ---------------------------- ------ ------ ------ ------ ------ ------ ------
-    blib/lib/Date/Holidays.pm      82.1   68.0   66.7  100.0  100.0  100.0   79.6
-    Total                          82.1   68.0   66.7  100.0  100.0  100.0   79.6
+    lib/Date/Holidays.pm           95.9   77.5   60.0  100.0  100.0   87.0   90.9
+    lib/Date/Holidays/Adapter.pm   84.2   64.7   44.4  100.0  100.0   12.0   79.2
+    ...te/Holidays/Adapter/AU.pm   93.1   62.5    n/a  100.0  100.0    0.0   89.1
+    ...te/Holidays/Adapter/BR.pm   72.7   25.0    n/a   83.3  100.0    0.0   70.5
+    ...te/Holidays/Adapter/CN.pm   70.8   25.0    n/a   83.3  100.0    0.0   69.4
+    ...te/Holidays/Adapter/DE.pm  100.0  100.0    n/a  100.0  100.0    0.0  100.0
+    ...te/Holidays/Adapter/DK.pm   91.6   50.0    n/a  100.0  100.0    0.0   88.8
+    ...te/Holidays/Adapter/ES.pm   72.7   25.0    n/a   83.3  100.0    0.0   70.5
+    ...te/Holidays/Adapter/FR.pm   90.9   50.0    n/a   85.7  100.0    0.0   87.8
+    ...te/Holidays/Adapter/GB.pm   92.3   50.0    n/a  100.0  100.0    0.0   89.4
+    ...te/Holidays/Adapter/JP.pm   73.5   37.5    n/a   77.7  100.0    0.0   69.8
+    ...te/Holidays/Adapter/KR.pm   86.3   50.0    n/a   85.7  100.0    0.0   84.8
+    ...Holidays/Adapter/LOCAL.pm   86.9   50.0   12.5  100.0  100.0    0.3   64.5
+    ...te/Holidays/Adapter/NO.pm   70.8   25.0    n/a   83.3  100.0    0.0   69.4
+    ...te/Holidays/Adapter/PL.pm   90.9   50.0    n/a   85.7  100.0    0.0   87.8
+    ...te/Holidays/Adapter/PT.pm   90.9   50.0    n/a  100.0  100.0    0.0   88.2
+    Total                          87.2   59.2   33.3   93.1  100.0  100.0   81.7
     ---------------------------- ------ ------ ------ ------ ------ ------ ------
-
-I am working on a better coverage in future releases
 
 =head1 SEE ALSO
 
@@ -825,10 +834,6 @@ Jonas B. Nielsen, (jonasbn) - C<< <jonasbn@cpan.org> >>
 Date-Holidays and related modules are (C) by Jonas B. Nielsen, (jonasbn)
 2004-2014
 
-Date-Holidays and related modules are released under the artistic license
-
-The distribution is licensed under the Artistic License, as specified
-by the Artistic file in the standard perl distribution
-(http://www.perl.com/language/misc/Artistic.html).
+Date-Holidays and related modules are released under the Artistic License 2.0
 
 =cut
